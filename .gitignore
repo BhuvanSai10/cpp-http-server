@@ -1,0 +1,22 @@
+# Compiled binaries
+server
+client
+
+# Build directory
+build/
+
+# VS Code settings
+.vscode/
+
+# Object files
+*.o
+
+# Executables
+*.out
+
+# CMake (future)
+CMakeFiles/
+CMakeCache.txt
+
+# Logs
+*.log
