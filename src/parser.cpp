@@ -1,0 +1,69 @@
+#include "parser.h"
+
+#include <sstream>
+
+HttpRequest HttpParser::parse(const std::string& request)
+{
+    HttpRequest httpRequest;
+
+    std::stringstream stream(request);
+
+    std::string line;
+
+    //---------------------------------------------------
+    // Read Request Line
+    //---------------------------------------------------
+
+    if (std::getline(stream, line))
+    {
+        if (!line.empty() && line.back() == '\r')
+        {
+            line.pop_back();
+        }
+
+        std::stringstream firstLine(line);
+
+        firstLine >> httpRequest.method
+                  >> httpRequest.path
+                  >> httpRequest.version;
+    }
+
+    //---------------------------------------------------
+    // Read Headers
+    //---------------------------------------------------
+
+    while (std::getline(stream, line))
+    {
+        if (!line.empty() && line.back() == '\r')
+        {
+            line.pop_back();
+        }
+
+        if (line.empty())
+        {
+            break;
+        }
+
+        size_t colonPosition = line.find(':');
+
+        if (colonPosition == std::string::npos)
+        {
+            continue;
+        }
+
+        std::string key =
+            line.substr(0, colonPosition);
+
+        std::string value =
+            line.substr(colonPosition + 1);
+
+        if (!value.empty() && value.front() == ' ')
+        {
+            value.erase(0, 1);
+        }
+
+        httpRequest.headers[key] = value;
+    }
+
+    return httpRequest;
+}
