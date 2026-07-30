@@ -1,7 +1,10 @@
 #include "router.h"
 
+#include "external/json.hpp"
 #include "file_reader.h"
 #include "mime_type.h"
+
+using json = nlohmann::json;
 
 HttpResponse Router::route(const HttpRequest& request)
 {
@@ -11,22 +14,62 @@ HttpResponse Router::route(const HttpRequest& request)
     MimeType mimeType;
 
     //--------------------------------------------------
-    // Dynamic Route : POST /echo
+    // Dynamic Route : POST /user
     //--------------------------------------------------
 
     if (request.method == "POST" &&
-        request.path == "/echo")
+        request.path == "/user")
     {
-        response.setStatus(200, "OK");
+        try
+        {
+            json requestJson = json::parse(request.body);
 
-        response.setHeader(
-            "Content-Type",
-            "text/plain");
+            std::string name =
+                requestJson["name"];
 
-        response.setBody(
-            "You sent:\n\n" + request.body);
+            std::string course =
+                requestJson["course"];
 
-        return response;
+            int age =
+                requestJson["age"];
+
+            json responseJson;
+
+            responseJson["status"] = "success";
+            responseJson["message"] =
+                "Welcome " + name;
+            responseJson["course"] = course;
+            responseJson["age"] = age;
+
+            response.setStatus(200, "OK");
+
+            response.setHeader(
+                "Content-Type",
+                "application/json");
+
+            response.setBody(
+                responseJson.dump(4));
+
+            return response;
+        }
+        catch (const json::exception& e)
+        {
+            json errorJson;
+
+            errorJson["status"] = "error";
+            errorJson["message"] = "Invalid JSON";
+
+            response.setStatus(400, "Bad Request");
+
+            response.setHeader(
+                "Content-Type",
+                "application/json");
+
+            response.setBody(
+                errorJson.dump(4));
+
+            return response;
+        }
     }
 
     //--------------------------------------------------

@@ -1,5 +1,4 @@
 #include <arpa/inet.h>
-#include <cstring>
 #include <iostream>
 #include <string>
 #include <sys/socket.h>
@@ -21,7 +20,8 @@ int main()
 
     if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0)
     {
-        std::cerr << "Invalid address\n";
+        std::cerr << "Invalid IP address\n";
+        close(clientSocket);
         return 1;
     }
 
@@ -37,28 +37,29 @@ int main()
     std::cout << "Connected to server!\n";
 
     //--------------------------------------------------
-    // POST Body
+    // JSON Body
     //--------------------------------------------------
 
-    std::string body = "Hello from Client";
+    std::string body =
+        R"({
+            "name":"Bhuvan",
+            "course":"MTech",
+            "age":23
+        })";
 
     //--------------------------------------------------
-    // Build POST Request
+    // HTTP POST Request
     //--------------------------------------------------
 
     std::string request =
-        "POST /echo HTTP/1.1\r\n"
+        "POST /user HTTP/1.1\r\n"
         "Host: localhost:8080\r\n"
-        "User-Agent: MyCPPBrowser/1.0\r\n"
-        "Content-Type: text/plain\r\n"
+        "User-Agent: MyCPPClient/1.0\r\n"
+        "Content-Type: application/json\r\n"
         "Content-Length: " + std::to_string(body.size()) + "\r\n"
         "Connection: close\r\n"
         "\r\n" +
         body;
-
-    //--------------------------------------------------
-    // Send Request
-    //--------------------------------------------------
 
     send(clientSocket,
          request.c_str(),
@@ -71,11 +72,11 @@ int main()
 
     char buffer[4096];
 
-    int bytesReceived = recv(
-        clientSocket,
-        buffer,
-        sizeof(buffer) - 1,
-        0);
+    int bytesReceived =
+        recv(clientSocket,
+             buffer,
+             sizeof(buffer) - 1,
+             0);
 
     if (bytesReceived > 0)
     {
