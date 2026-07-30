@@ -1,73 +1,60 @@
 #include "router.h"
+
 #include "file_reader.h"
 #include "mime_type.h"
 
-std::string Router::route(const HttpRequest& request)
+HttpResponse Router::route(const HttpRequest& request)
 {
-    FileReader reader;
-    MimeType mime;
+    HttpResponse response;
 
-    std::string filePath;
+    FileReader fileReader;
+    MimeType mimeType;
 
-    //----------------------------------
-    // Home Page
-    //----------------------------------
+    //--------------------------------------------------
+    // Determine requested file
+    //--------------------------------------------------
 
-    if (request.path == "/")
+    std::string path = request.path;
+
+    if (path == "/")
     {
-        filePath = "static/index.html";
-    }
-    else
-    {
-        filePath = "static" + request.path;
+        path = "/index.html";
     }
 
-    //----------------------------------
-    // File Exists?
-    //----------------------------------
+    std::string filePath = "static" + path;
 
-    std::string status;
+    //--------------------------------------------------
+    // File exists
+    //--------------------------------------------------
 
-    if (reader.exists(filePath))
+    if (fileReader.exists(filePath))
     {
-        status = "HTTP/1.1 200 OK";
+        std::string content = fileReader.readFile(filePath);
+
+        response.setStatus(200, "OK");
+
+        response.setHeader(
+            "Content-Type",
+            mimeType.getType(filePath));
+
+        response.setBody(content);
+
+        return response;
     }
-    else
-    {
-        status = "HTTP/1.1 404 Not Found";
 
-        filePath = "static/404.html";
-    }
+    //--------------------------------------------------
+    // 404 Not Found
+    //--------------------------------------------------
 
-    //----------------------------------
-    // Read File
-    //----------------------------------
+    std::string notFound = fileReader.readFile("static/404.html");
 
-    std::string body =
-        reader.readFile(filePath);
+    response.setStatus(404, "Not Found");
 
-    //----------------------------------
-    // MIME Type
-    //----------------------------------
+    response.setHeader(
+        "Content-Type",
+        "text/html");
 
-    std::string contentType =
-        mime.getType(filePath);
-
-    //----------------------------------
-    // Build Response
-    //----------------------------------
-
-    std::string response =
-        status + "\r\n"
-        "Content-Type: " +
-        contentType +
-        "\r\n"
-        "Content-Length: " +
-        std::to_string(body.size()) +
-        "\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        + body;
+    response.setBody(notFound);
 
     return response;
 }

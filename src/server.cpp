@@ -8,6 +8,7 @@
 
 #include "parser.h"
 #include "router.h"
+#include "http_response.h"
 
 const int PORT = 8080;
 const int BUFFER_SIZE = 4096;
@@ -36,16 +37,30 @@ void handleClient(int clientSocket)
     std::cout << "\n========== Request ==========\n";
     std::cout << buffer << std::endl;
 
+    //--------------------------------------------------
+    // Parse HTTP Request
+    //--------------------------------------------------
     HttpParser parser;
     HttpRequest request = parser.parse(buffer);
 
+    //--------------------------------------------------
+    // Route Request
+    //--------------------------------------------------
     Router router;
-    std::string response = router.route(request);
+    HttpResponse response = router.route(request);
 
+    //--------------------------------------------------
+    // Convert HttpResponse -> HTTP String
+    //--------------------------------------------------
+    std::string rawResponse = response.toString();
+
+    //--------------------------------------------------
+    // Send Response
+    //--------------------------------------------------
     send(
         clientSocket,
-        response.c_str(),
-        response.size(),
+        rawResponse.c_str(),
+        rawResponse.size(),
         0);
 
     close(clientSocket);
@@ -127,10 +142,7 @@ int main()
                   << ntohs(clientAddress.sin_port)
                   << std::endl;
 
-        // Create a new thread for this client
         std::thread worker(handleClient, clientSocket);
-
-        // Let the thread run independently
         worker.detach();
     }
 

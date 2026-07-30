@@ -1,11 +1,13 @@
-#pragma once
-
-#include <string>
+#ifndef ROUTER_H
+#define ROUTER_H
 
 #include "http_request.h"
+#include "http_response.h"
 
 class Router
 {
 public:
-    std::string route(const HttpRequest& request);
+    HttpResponse route(const HttpRequest& request);
 };
+
+#endif
