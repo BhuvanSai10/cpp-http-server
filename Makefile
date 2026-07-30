@@ -2,12 +2,14 @@ CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Iinclude
 
 SERVER_SRC = \
-	src/server.cpp \
-	src/parser.cpp \
-	src/router.cpp \
-	src/file_reader.cpp \
-	src/mime_type.cpp \
-	src/http_response.cpp
+    src/server.cpp \
+    src/parser.cpp \
+    src/router.cpp \
+    src/file_reader.cpp \
+    src/mime_type.cpp \
+    src/http_response.cpp \
+    src/logger.cpp \
+    src/thread_pool.cpp
 
 CLIENT_SRC = src/client.cpp
 

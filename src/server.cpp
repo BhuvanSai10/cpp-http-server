@@ -1,30 +1,43 @@
-#include <iostream>
+#include <arpa/inet.h>
+#include <chrono>
 #include <cstring>
+#include <iostream>
+#include <string>
 #include <thread>
 
-#include <unistd.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
+#include "http_response.h"
+#include "logger.h"
 #include "parser.h"
 #include "router.h"
-#include "http_response.h"
+#include "thread_pool.h"
 
 const int PORT = 8080;
 const int BUFFER_SIZE = 4096;
 
 //--------------------------------------------------
-// Handles one client connection
+// Handles one client
 //--------------------------------------------------
-void handleClient(int clientSocket)
+
+void handleClient(
+    int clientSocket,
+    std::string clientIP)
 {
+    Logger& logger = Logger::getInstance();
+
+    auto startTime =
+        std::chrono::high_resolution_clock::now();
+
     char buffer[BUFFER_SIZE];
 
-    int bytesReceived = recv(
-        clientSocket,
-        buffer,
-        BUFFER_SIZE - 1,
-        0);
+    int bytesReceived =
+        recv(
+            clientSocket,
+            buffer,
+            BUFFER_SIZE - 1,
+            0);
 
     if (bytesReceived <= 0)
     {
@@ -34,54 +47,76 @@ void handleClient(int clientSocket)
 
     buffer[bytesReceived] = '\0';
 
-    std::cout << "\n========== Request ==========\n";
-    std::cout << buffer << std::endl;
-
-    //--------------------------------------------------
-    // Parse HTTP Request
-    //--------------------------------------------------
     HttpParser parser;
-    HttpRequest request = parser.parse(buffer);
 
-    //--------------------------------------------------
-    // Route Request
-    //--------------------------------------------------
+    HttpRequest request =
+        parser.parse(buffer);
+
     Router router;
-    HttpResponse response = router.route(request);
 
-    //--------------------------------------------------
-    // Convert HttpResponse -> HTTP String
-    //--------------------------------------------------
-    std::string rawResponse = response.toString();
+    HttpResponse response =
+        router.route(request);
 
-    //--------------------------------------------------
-    // Send Response
-    //--------------------------------------------------
+    std::string responseString =
+        response.toString();
+
     send(
         clientSocket,
-        rawResponse.c_str(),
-        rawResponse.size(),
+        responseString.c_str(),
+        responseString.size(),
         0);
 
-    close(clientSocket);
+    auto endTime =
+        std::chrono::high_resolution_clock::now();
 
-    std::cout << "Response sent to client.\n";
+    auto duration =
+        std::chrono::duration_cast<
+            std::chrono::milliseconds>(
+                endTime - startTime);
+
+    logger.info(
+        clientIP +
+        " " +
+        request.method +
+        " " +
+        request.path +
+        " " +
+        request.version +
+        " -> " +
+        std::to_string(
+            response.getStatusCode()) +
+        " " +
+        response.getStatusMessage() +
+        " (" +
+        std::to_string(
+            duration.count()) +
+        " ms)");
+
+    close(clientSocket);
 }
 
 //--------------------------------------------------
 // Main
 //--------------------------------------------------
+
 int main()
 {
+    Logger& logger = Logger::getInstance();
+    ThreadPool pool(4);
+
     int serverSocket;
 
     sockaddr_in serverAddress;
 
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    serverSocket =
+        socket(
+            AF_INET,
+            SOCK_STREAM,
+            0);
 
     if (serverSocket < 0)
     {
-        std::cerr << "Failed to create socket.\n";
+        logger.error("Failed to create socket.");
         return 1;
     }
 
@@ -103,47 +138,68 @@ int main()
             reinterpret_cast<sockaddr*>(&serverAddress),
             sizeof(serverAddress)) < 0)
     {
-        std::cerr << "Bind failed.\n";
+        logger.error("Bind failed.");
+
         close(serverSocket);
+
         return 1;
     }
 
     if (listen(serverSocket, 10) < 0)
     {
-        std::cerr << "Listen failed.\n";
+        logger.error("Listen failed.");
+
         close(serverSocket);
+
         return 1;
     }
 
-    std::cout << "=====================================\n";
-    std::cout << " Multi-threaded HTTP Server Started\n";
-    std::cout << " Listening on http://localhost:8080\n";
-    std::cout << "=====================================\n";
+    std::cout
+        << "=====================================\n";
+
+    logger.info(
+        "Multi-threaded HTTP Server Started");
+
+    logger.info(
+        "Listening on http://localhost:8080");
+
+    std::cout
+        << "=====================================\n";
 
     while (true)
     {
         sockaddr_in clientAddress;
-        socklen_t clientLength = sizeof(clientAddress);
 
-        int clientSocket = accept(
-            serverSocket,
-            reinterpret_cast<sockaddr*>(&clientAddress),
-            &clientLength);
+        socklen_t clientLength =
+            sizeof(clientAddress);
+
+        int clientSocket =
+            accept(
+                serverSocket,
+                reinterpret_cast<sockaddr*>(&clientAddress),
+                &clientLength);
 
         if (clientSocket < 0)
         {
-            std::cerr << "Accept failed.\n";
+            logger.error("Accept failed.");
             continue;
         }
 
-        std::cout << "\nClient Connected: "
-                  << inet_ntoa(clientAddress.sin_addr)
-                  << ":"
-                  << ntohs(clientAddress.sin_port)
-                  << std::endl;
+        std::string clientIP =
+            inet_ntoa(
+                clientAddress.sin_addr);
 
-        std::thread worker(handleClient, clientSocket);
-        worker.detach();
+        logger.info(
+            "Client Connected : " +
+            clientIP);
+            
+        pool.enqueue(
+            [clientSocket, clientIP]()
+            {
+                handleClient(
+                    clientSocket,
+                    clientIP);
+            });
     }
 
     close(serverSocket);
