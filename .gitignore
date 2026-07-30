@@ -1,22 +1,27 @@
-# Compiled binaries
+# Compiled executables
 server
 client
 
 # Build directory
 build/
 
-# VS Code settings
-.vscode/
-
 # Object files
 *.o
 
-# Executables
-*.out
+# Static libraries
+*.a
 
-# CMake (future)
+# Shared libraries
+*.so
+
+# VS Code settings
+.vscode/
+
+# CMake files (future)
 CMakeFiles/
 CMakeCache.txt
+cmake_install.cmake
+Makefile.cmake
 
 # Logs
 *.log

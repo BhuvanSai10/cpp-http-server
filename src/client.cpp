@@ -33,7 +33,7 @@ int main() {
     std::cout << "Connected to server!\n";
 
     std::string request =
-        "GET / HTTP/1.1\r\n"
+        "GET /about HTTP/1.1\r\n"
         "Host: localhost:8080\r\n"
         "User-Agent: MyCPPBrowser/1.0\r\n"
         "Accept: text/html\r\n"
