@@ -1,85 +1,73 @@
 #include "router.h"
+#include "file_reader.h"
+#include "mime_type.h"
 
 std::string Router::route(const HttpRequest& request)
 {
-    std::string body;
-    std::string status;
+    FileReader reader;
+    MimeType mime;
 
-    //-----------------------------------
+    std::string filePath;
+
+    //----------------------------------
     // Home Page
-    //-----------------------------------
+    //----------------------------------
 
     if (request.path == "/")
     {
-        status = "HTTP/1.1 200 OK";
-
-        body =
-            "<html>"
-            "<body>"
-            "<h1>Home Page</h1>"
-            "<p>Welcome to my C++ HTTP Server.</p>"
-            "</body>"
-            "</html>";
+        filePath = "static/index.html";
+    }
+    else
+    {
+        filePath = "static" + request.path;
     }
 
-    //-----------------------------------
-    // About
-    //-----------------------------------
+    //----------------------------------
+    // File Exists?
+    //----------------------------------
 
-    else if (request.path == "/about")
+    std::string status;
+
+    if (reader.exists(filePath))
     {
         status = "HTTP/1.1 200 OK";
-
-        body =
-            "<html>"
-            "<body>"
-            "<h1>About Page</h1>"
-            "<p>This server is written in C++ using POSIX sockets.</p>"
-            "</body>"
-            "</html>";
     }
-
-    //-----------------------------------
-    // Contact
-    //-----------------------------------
-
-    else if (request.path == "/contact")
-    {
-        status = "HTTP/1.1 200 OK";
-
-        body =
-            "<html>"
-            "<body>"
-            "<h1>Contact</h1>"
-            "<p>Email : example@test.com</p>"
-            "</body>"
-            "</html>";
-    }
-
-    //-----------------------------------
-    // Unknown Page
-    //-----------------------------------
-
     else
     {
         status = "HTTP/1.1 404 Not Found";
 
-        body =
-            "<html>"
-            "<body>"
-            "<h1>404 Not Found</h1>"
-            "<p>The requested page does not exist.</p>"
-            "</body>"
-            "</html>";
+        filePath = "static/404.html";
     }
 
+    //----------------------------------
+    // Read File
+    //----------------------------------
+
+    std::string body =
+        reader.readFile(filePath);
+
+    //----------------------------------
+    // MIME Type
+    //----------------------------------
+
+    std::string contentType =
+        mime.getType(filePath);
+
+    //----------------------------------
+    // Build Response
+    //----------------------------------
+
     std::string response =
-        status + "\r\n" +
-        "Content-Type: text/html\r\n" +
-        "Content-Length: " + std::to_string(body.size()) + "\r\n" +
-        "Connection: close\r\n" +
-        "\r\n" +
-        body;
+        status + "\r\n"
+        "Content-Type: " +
+        contentType +
+        "\r\n"
+        "Content-Length: " +
+        std::to_string(body.size()) +
+        "\r\n"
+        "Connection: close\r\n"
+        "\r\n"
+        + body;
 
     return response;
 }

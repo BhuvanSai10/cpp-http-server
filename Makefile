@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Iinclude
+CXXFLAGS = -std=c++17 -Wall -pthread -Iinclude
 
 SERVER = server
 CLIENT = client
@@ -11,6 +11,8 @@ $(SERVER):
 	src/server.cpp \
 	src/parser.cpp \
 	src/router.cpp \
+	src/file_reader.cpp \
+	src/mime_type.cpp \
 	-o $(SERVER)
 
 $(CLIENT):
