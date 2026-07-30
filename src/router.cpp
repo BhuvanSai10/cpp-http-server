@@ -11,6 +11,25 @@ HttpResponse Router::route(const HttpRequest& request)
     MimeType mimeType;
 
     //--------------------------------------------------
+    // Dynamic Route : POST /echo
+    //--------------------------------------------------
+
+    if (request.method == "POST" &&
+        request.path == "/echo")
+    {
+        response.setStatus(200, "OK");
+
+        response.setHeader(
+            "Content-Type",
+            "text/plain");
+
+        response.setBody(
+            "You sent:\n\n" + request.body);
+
+        return response;
+    }
+
+    //--------------------------------------------------
     // Determine requested file
     //--------------------------------------------------
 
@@ -46,7 +65,8 @@ HttpResponse Router::route(const HttpRequest& request)
     // 404 Not Found
     //--------------------------------------------------
 
-    std::string notFound = fileReader.readFile("static/404.html");
+    std::string notFound =
+        fileReader.readFile("static/404.html");
 
     response.setStatus(404, "Not Found");
 

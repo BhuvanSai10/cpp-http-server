@@ -9,9 +9,9 @@ HttpRequest HttpParser::parse(const std::string& request)
     std::stringstream stream(request);
     std::string line;
 
-    // ----------------------------
+    //--------------------------------------------------
     // Parse Request Line
-    // ----------------------------
+    //--------------------------------------------------
 
     if (std::getline(stream, line))
     {
@@ -27,9 +27,9 @@ HttpRequest HttpParser::parse(const std::string& request)
                   >> httpRequest.version;
     }
 
-    // ----------------------------
+    //--------------------------------------------------
     // Parse Headers
-    // ----------------------------
+    //--------------------------------------------------
 
     while (std::getline(stream, line))
     {
@@ -43,7 +43,7 @@ HttpRequest HttpParser::parse(const std::string& request)
             break;
         }
 
-        size_t colonPosition = line.find(':');
+        std::size_t colonPosition = line.find(':');
 
         if (colonPosition == std::string::npos)
         {
@@ -60,6 +60,16 @@ HttpRequest HttpParser::parse(const std::string& request)
 
         httpRequest.headers[key] = value;
     }
+
+    //--------------------------------------------------
+    // Parse Body
+    //--------------------------------------------------
+
+    std::ostringstream body;
+
+    body << stream.rdbuf();
+
+    httpRequest.body = body.str();
 
     return httpRequest;
 }
