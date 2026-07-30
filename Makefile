@@ -1,14 +1,16 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra
+CXXFLAGS = -std=c++17 -Wall -Iinclude
 
-TARGET = server
-SOURCE = server.cpp
+SERVER = server
+CLIENT = client
 
-all:
-	$(CXX) $(CXXFLAGS) $(SOURCE) -o $(TARGET)
+all: $(SERVER) $(CLIENT)
 
-run: all
-	./$(TARGET)
+$(SERVER):
+	$(CXX) $(CXXFLAGS) src/server.cpp src/parser.cpp -o $(SERVER)
+
+$(CLIENT):
+	$(CXX) $(CXXFLAGS) src/client.cpp -o $(CLIENT)
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(SERVER) $(CLIENT)

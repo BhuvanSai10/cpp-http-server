@@ -7,12 +7,11 @@ HttpRequest HttpParser::parse(const std::string& request)
     HttpRequest httpRequest;
 
     std::stringstream stream(request);
-
     std::string line;
 
-    //---------------------------------------------------
-    // Read Request Line
-    //---------------------------------------------------
+    // ----------------------------
+    // Parse Request Line
+    // ----------------------------
 
     if (std::getline(stream, line))
     {
@@ -28,9 +27,9 @@ HttpRequest HttpParser::parse(const std::string& request)
                   >> httpRequest.version;
     }
 
-    //---------------------------------------------------
-    // Read Headers
-    //---------------------------------------------------
+    // ----------------------------
+    // Parse Headers
+    // ----------------------------
 
     while (std::getline(stream, line))
     {
@@ -51,11 +50,8 @@ HttpRequest HttpParser::parse(const std::string& request)
             continue;
         }
 
-        std::string key =
-            line.substr(0, colonPosition);
-
-        std::string value =
-            line.substr(colonPosition + 1);
+        std::string key = line.substr(0, colonPosition);
+        std::string value = line.substr(colonPosition + 1);
 
         if (!value.empty() && value.front() == ' ')
         {
